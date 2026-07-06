@@ -5,13 +5,14 @@ An automated data engineering pipeline that extracts international holiday data 
 ## 🏗️ Architecture Overview
 
 The system is designed around modern data engineering principles, separating the storage/processing layer from the active query/serving layer.
-
+```
 [REST API] ──> [Bronze Layer] ───> [Silver Layer] ───> [Gold Layer] ───> [PostgreSQL]
 (Nager.Date)    (Raw JSON,      (Clean Parquet)    (Aggregated     (Data Mart for
                Partitioned)                        Parquet)        Applications)
                     │                  │                  │              │
                     └──────────────────┴─────────┬────────┴──────────────┘
                                          Engine: DuckDB SQL
+```
 
 * **Extraction (Bronze):** Ingests raw JSON payloads from the API and structures them into a time-partitioned directory layout (year=YYYY/month=MM/day=DD) mimicking cloud blob storage Hive structures to preserve historical raw data immutability.
 * **Transformation (Silver):** Leverages DuckDB to execute zero-server in-memory SQL directly on the raw nested JSON, casting explicit data types, standardizing schemas into snake_case, and saving the output as highly compressed Parquet files.
@@ -33,7 +34,7 @@ The system is designed around modern data engineering principles, separating the
 ## 📂 Data Lake Directory Structure
 
 Because of data compliance and cost engineering best practices, raw and processed data assets are localized on the execution system and explicitly decoupled from source control via .gitignore.
-
+```
 storage/
 ├── bronze/
 │   └── year=2026/
@@ -46,7 +47,7 @@ storage/
 └── gold/
     └── long_weekends/
         └── federal_long_weekends.parquet   # High-value analytical model via DuckDB
-
+```
 ---
 
 ## ⚙️ Setup and Installation
