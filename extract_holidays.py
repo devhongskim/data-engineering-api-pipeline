@@ -21,7 +21,6 @@ try:
     day = today.strftime("%d")
     
     # 2. Define our Bronze structure path: bronze/year=YYYY/month=MM/day=DD/
-    # This structure protects us from scanning the entire collection of data later!
     bronze_dir = os.path.join("storage", "bronze", f"year={year}", f"month={month}", f"day={day}")
     
     # 3. Create the directories if they don't exist yet
