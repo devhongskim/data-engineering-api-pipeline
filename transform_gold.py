@@ -1,39 +1,46 @@
 import os
-import pandas as pd
+import duckdb
 
-print("Starting Gold layer aggregation...")
+def run_gold_transformation():
+    print("✨ Starting DuckDB Gold Transformation...")
+    
+    # Paths matching your exact tree layout
+    silver_path = "storage/silver/holidays/clean_holidays.parquet"
+    gold_dir = "storage/gold/long_weekends"
+    gold_path = os.path.join(gold_dir, "federal_long_weekends.parquet")
+    
+    os.makedirs(gold_dir, exist_ok=True)
+    
+    conn = duckdb.connect()
+    
+    # Write pure SQL to isolate federal long weekends
+    # We read directly from the Parquet file as a table!
+    query = f"""
+        SELECT 
+            holiday_date,
+            local_name,
+            english_name,
+            country_code,
+            -- Let's extract the day of the week to help verify long weekends
+            strftime(holiday_date, '%A') as day_of_week
+        FROM read_parquet('{silver_path}')
+        WHERE is_global = true 
+          AND country_code = 'US'
+          -- Long weekends typically fall on Friday (5) or Monday (1)
+          AND dayofweek(holiday_date) IN (1, 5)
+        ORDER BY holiday_date ASC
+    """
+    
+    print(f"🎬 Aggregating business metrics from Silver tier...")
+    
+    # Execute and stream straight out to your Gold Parquet layer
+    conn.sql(query).write_parquet(gold_path)
+    
+    print(f"🏆 Success! Analytical Gold file saved to: {gold_path}")
+    
+    # Peek at the final golden data asset
+    print("\n👀 Gold Layer Preview (Federal Long Weekends):")
+    print(conn.sql(f"SELECT * FROM read_parquet('{gold_path}')").df())
 
-# 1. Locate and read the Silver Parquet file directly
-silver_file = os.path.join("storage", "silver", "holidays", "clean_holidays.parquet")
-
-if not os.path.exists(silver_file):
-    print(f"Error: Silver file not found at {silver_file}. Please run transform_silver.py first!")
-    exit()
-
-df = pd.read_parquet(silver_file)
-
-# 2. FILTER: Keep only global/national public holidays
-# (Filtering out any state-specific bank or local closures)
-gold_df = df[df["global"] == True].copy()
-
-# 3. COMPUTE: Extract the day of the week from our true Datetime column
-# This creates a readable string like 'Monday', 'Friday', etc.
-gold_df["day_of_week"] = gold_df["holiday_date"].dt.day_name()
-
-# 4. ANALYZE: Identify 3-Day Weekend Opportunities
-# A holiday creates a long weekend if it falls on a Friday or a Monday!
-gold_df["is_long_weekend"] = gold_df["day_of_week"].isin(["Friday", "Monday"])
-
-# 5. SELECT & REORDER: Streamline down to only business-critical columns
-gold_columns = ["holiday_date", "english_name", "day_of_week", "is_long_weekend"]
-gold_df = gold_df[gold_columns]
-
-# 6. WRITE TO GOLD LAYER AS PARQUET
-gold_dir = os.path.join("storage", "gold", "long_weekends")
-os.makedirs(gold_dir, exist_ok=True)
-
-gold_file = os.path.join(gold_dir, "federal_long_weekends.parquet")
-gold_df.to_parquet(gold_file, index=False)
-
-print("Success!")
-print(f"Gold Layer complete. Specialized analytics table saved to: {gold_file}")
+if __name__ == "__main__":
+    run_gold_transformation()
