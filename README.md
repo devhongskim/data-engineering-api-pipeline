@@ -1,3 +1,5 @@
+This was an earlier, smaller-scale exploration of the Medallion Architecture pattern. See stock-data-pipeline for the production-grade evolution of these ideas — adding Airflow orchestration, tested code, Terraform-managed infrastructure, and Slack alerting.
+
 # Production-Grade Medallion Data Pipeline (DuckDB + PostgreSQL)
 
 An automated data engineering pipeline that extracts international holiday data from a third-party REST API, processes it through a local three-tiered data lake (Medallion Architecture), and loads the optimized analytical tier into a PostgreSQL relational database.
