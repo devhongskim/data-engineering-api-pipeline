@@ -1,6 +1,6 @@
-This was an earlier, smaller-scale exploration of the Medallion Architecture pattern. See stock-data-pipeline for the production-grade evolution of these ideas — adding Airflow orchestration, tested code, Terraform-managed infrastructure, and Slack alerting.
+> This was an earlier, smaller-scale exploration of the Medallion Architecture pattern. See **[stock-data-pipeline](https://github.com/devhongskim/stock-data-pipeline)** for the production-grade evolution of these ideas — adding Airflow orchestration, tested code, Terraform-managed infrastructure, and Slack alerting.
 
-# Production-Grade Medallion Data Pipeline (DuckDB + PostgreSQL)
+# Medallion Pipeline Prototype (DuckDB + PostgreSQL)
 
 An automated data engineering pipeline that extracts international holiday data from a third-party REST API, processes it through a local three-tiered data lake (Medallion Architecture), and loads the optimized analytical tier into a PostgreSQL relational database.
 
@@ -59,27 +59,33 @@ storage/
 * A running instance of PostgreSQL
 
 ### 1. Clone the Repository
-git clone [https://github.com/YOUR_USERNAME/data-engineering-api-pipeline.git](https://github.com/YOUR_USERNAME/data-engineering-api-pipeline.git)
+```bash
+git clone https://github.com/devhongskim/data-engineering-api-pipeline.git
 cd data-engineering-api-pipeline
+```
 
 ### 2. Install Dependencies
-pip install duckdb sqlalchemy psycopg2-binary requests python-dotenv pandas
+```bash
+pip install -r requirements.txt
+```
 
 ### 3. Configure Your Environment Variables
-Create a .env file in the project root directory and supply your database credentials:
+Create a `.env` file in the project root directory and supply your database credentials (`DB_USER`, `DB_HOST`, and `DB_PORT` default to `postgres`, `localhost`, and `5432` if omitted):
 
+```
 DB_USER=postgres
 DB_PASSWORD=your_secure_password
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=holiday_pipeline
+```
 
 ---
 
 ## 🚀 Running the Pipeline
-
 The pipeline runs sequentially to move and transform data from the source out to production:
 
+```bash
 # Phase 1: Extract API data to Partitioned Bronze Layer
 python extract_holidays.py
 
@@ -91,10 +97,11 @@ python transform_gold.py
 
 # Phase 4: Stream analytical Gold layer into PostgreSQL Production
 python load_gold_to_postgres.py
+```
 
 ---
 
 ## 📊 Evolutionary Log (Portfolio Milestone)
 
 * **V1.0 (Functional Prototype):** Initially built the pipeline utilizing Pandas for standard manipulation and storage as flat CSVs.
-* **V2.0 (Architectural Optimization):** Refactored the core transformations to use DuckDB. Replaced implicit python logic with structured SQL operations and switched storage types to Apache Parquet, achieving significantly reduced RAM usage and executing transformations up to 10x faster on disk records.
+* **V2.0 (Architectural Optimization):** Refactored the core transformations to use DuckDB. Replaced implicit python logic with structured SQL operations and switched storage types to Apache Parquet, which noticeably reduced memory use and sped up the transformations in local runs (observed informally, not benchmarked).
